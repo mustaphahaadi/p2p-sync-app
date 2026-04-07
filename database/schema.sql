@@ -67,4 +67,4 @@ CREATE INDEX idx_notifications_sent ON notifications(sent_at);
 -- Password: Admin@123 (bcrypt hash)
 -- -------------------------------------------
 INSERT INTO users (name, email, password, department, role) VALUES
-('System Admin', 'admin@campus.edu', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administration', 'admin');
+('System Admin', 'admin@campus.edu', '$2y$10$bx1X0ouj0pJvuxHgTpDDqu0XhopkucSbBZYK6w.UT1Vk226IvXmqq', 'Administration', 'admin');
