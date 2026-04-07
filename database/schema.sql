@@ -1,3 +1,4 @@
+
 -- ============================================
 -- Smart Reminder System - Database Schema
 -- Campus Activities Academic Calendar
