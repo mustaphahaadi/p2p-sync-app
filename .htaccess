@@ -1,0 +1,29 @@
+# Smart Reminder System — Apache Configuration
+# Place in project root
+
+# Enable URL rewriting
+RewriteEngine On
+
+# Deny access to sensitive directories
+RewriteRule ^config/ - [F,L]
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^cron/ - [F,L]
+RewriteRule ^database/ - [F,L]
+
+# Deny access to hidden files
+RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Disable directory listing
+Options -Indexes
+
+# PHP settings (if allowed)
+<IfModule mod_php.c>
+    php_value display_errors 0
+    php_value log_errors 1
+    php_value error_reporting E_ALL
+    php_value session.cookie_httponly 1
+    php_value session.use_strict_mode 1
+</IfModule>
