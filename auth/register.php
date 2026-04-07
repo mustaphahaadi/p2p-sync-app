@@ -142,7 +142,7 @@ $pageTitle = 'Create Account';
                     <label for="confirm_password"><i class="bi bi-lock-fill me-1"></i> Confirm Password</label>
                 </div>
                 
-                <button type="submit" class="btn btn-primary-gradient w-100 py-3">
+                <button type="submit" class="btn btn-primary-solid w-100 py-3">
                     <i class="bi bi-person-plus me-2"></i> Create Account
                 </button>
             </form>

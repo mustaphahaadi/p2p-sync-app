@@ -77,7 +77,7 @@ $lecturerCount = $pdo->query("SELECT COUNT(*) FROM users WHERE role='lecturer'")
 $adminCount    = $pdo->query("SELECT COUNT(*) FROM users WHERE role='admin'")->fetchColumn();
 ?>
 
-<div class="container py-4">
+<div class="page-content">
     <div class="page-header fade-in">
         <h1><i class="bi bi-people me-2" style="color:var(--primary)"></i> User Management</h1>
         <p>View and manage registered users</p>
@@ -151,7 +151,7 @@ $adminCount    = $pdo->query("SELECT COUNT(*) FROM users WHERE role='admin'")->f
                     </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary-gradient flex-grow-1">
+                    <button type="submit" class="btn btn-primary-solid flex-grow-1">
                         <i class="bi bi-search me-1"></i> Search
                     </button>
                     <a href="<?= BASE_URL ?>admin/users.php" class="btn btn-outline-secondary">

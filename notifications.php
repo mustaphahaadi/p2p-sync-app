@@ -39,7 +39,7 @@ $notifications = $stmt->fetchAll();
 $unreadNotifs = array_filter($notifications, fn($n) => !$n['is_read']);
 ?>
 
-<div class="container py-4">
+<div class="page-content">
     <div class="page-header fade-in">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
@@ -74,9 +74,9 @@ $unreadNotifs = array_filter($notifications, fn($n) => !$n['is_read']);
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="mb-1 fw-bold" style="font-size:.95rem"><?= sanitize($notif['event_title']) ?></h6>
-                                    <p class="mb-1 text-muted" style="font-size:.85rem"><?= sanitize($notif['message']) ?></p>
-                                    <div class="d-flex flex-wrap gap-2" style="font-size:.78rem">
+                                    <h6 class="mb-1 fw-bold" style="font-size:.9rem"><?= sanitize($notif['event_title']) ?></h6>
+                                    <p class="mb-1 text-muted" style="font-size:.83rem"><?= sanitize($notif['message']) ?></p>
+                                    <div class="d-flex flex-wrap gap-2" style="font-size:.75rem">
                                         <span class="text-muted">
                                             <i class="bi bi-calendar3 me-1"></i>
                                             Event: <?= date('M d, Y', strtotime($notif['event_date'])) ?>

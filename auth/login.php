@@ -107,7 +107,7 @@ $flash = getFlash();
                     <label for="password"><i class="bi bi-lock me-1"></i> Password</label>
                 </div>
                 
-                <button type="submit" class="btn btn-primary-gradient w-100 py-3">
+                <button type="submit" class="btn btn-primary-solid w-100 py-3">
                     <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
                 </button>
             </form>

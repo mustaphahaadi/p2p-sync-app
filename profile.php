@@ -81,7 +81,7 @@ $stmt->execute([$userId]);
 $unreadNotifCount = $stmt->fetchColumn();
 ?>
 
-<div class="container py-4">
+<div class="page-content">
     <div class="page-header fade-in">
         <h1><i class="bi bi-person-circle me-2" style="color:var(--primary)"></i> My Profile</h1>
         <p>Manage your account settings</p>
@@ -169,7 +169,7 @@ $unreadNotifCount = $stmt->fetchColumn();
                             </select>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary-gradient">
+                        <button type="submit" class="btn btn-primary-solid">
                             <i class="bi bi-check-lg me-1"></i> Save Changes
                         </button>
                     </form>

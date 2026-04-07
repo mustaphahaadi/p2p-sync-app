@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="container py-4">
+<div class="page-content">
     <div class="page-header fade-in">
         <div class="d-flex align-items-center gap-3">
             <a href="<?= BASE_URL ?>events/index.php" class="btn btn-outline-secondary btn-sm">
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <hr class="my-4">
                         
                         <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-primary-gradient px-4">
+                            <button type="submit" class="btn btn-primary-solid px-4">
                                 <i class="bi bi-check-lg me-1"></i> Update Event
                             </button>
                             <a href="<?= BASE_URL ?>events/index.php" class="btn btn-outline-secondary">Cancel</a>

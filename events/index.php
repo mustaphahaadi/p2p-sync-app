@@ -58,7 +58,7 @@ $deptStmt = $pdo->query("SELECT DISTINCT department FROM events ORDER BY departm
 $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
-<div class="container py-4">
+<div class="page-content">
     <!-- Page Header -->
     <div class="page-header fade-in">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -67,7 +67,7 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                 <p>Browse and manage campus academic calendar events</p>
             </div>
             <?php if (isAdmin()): ?>
-            <a href="<?= BASE_URL ?>events/create.php" class="btn btn-primary-gradient">
+            <a href="<?= BASE_URL ?>events/create.php" class="btn btn-primary-solid">
                 <i class="bi bi-plus-lg me-1"></i> Add Event
             </a>
             <?php endif; ?>
@@ -109,7 +109,7 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary-gradient flex-grow-1">
+                    <button type="submit" class="btn btn-primary-solid flex-grow-1">
                         <i class="bi bi-funnel me-1"></i> Filter
                     </button>
                     <a href="<?= BASE_URL ?>events/index.php" class="btn btn-outline-secondary">
