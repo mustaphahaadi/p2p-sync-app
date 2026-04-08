@@ -250,7 +250,7 @@ $todayEvents = $stmt->fetchAll();
                                     <div class="flex-grow-1">
                                         <div class="fw-semibold" style="font-size:.88rem"><?= sanitize($notif['event_title']) ?></div>
                                         <p class="mb-0 text-muted" style="font-size:.78rem">
-                                            <?= sanitize(mb_strimwidth($notif['message'], 0, 80, '...')) ?>
+                                            <?= sanitize(shortenText($notif['message'], 80)) ?>
                                         </p>
                                         <small class="text-muted"><i class="bi bi-clock me-1"></i><?= timeAgo($notif['sent_at']) ?></small>
                                     </div>

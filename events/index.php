@@ -173,7 +173,7 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                             <!-- Title & Description -->
                             <h6 class="fw-bold mb-2"><?= sanitize($event['title']) ?></h6>
                             <p class="text-muted mb-3" style="font-size:.85rem;flex-grow:1">
-                                <?= sanitize(mb_strimwidth($event['description'] ?? '', 0, 120, '...')) ?>
+                                <?= sanitize(shortenText($event['description'] ?? '', 120)) ?>
                             </p>
                             
                             <!-- Meta -->

@@ -160,3 +160,17 @@ function timeAgo($datetime) {
     if ($diff->i > 0) return $diff->i . ' minute' . ($diff->i > 1 ? 's' : '') . ' ago';
     return 'Just now';
 }
+
+/**
+ * Safely truncate text without requiring mbstring extension
+ */
+function shortenText($string, $maxLength = 120, $append = '...') {
+    if (empty($string)) return '';
+    if (strlen($string) <= $maxLength) return $string;
+    
+    if (function_exists('mb_strimwidth')) {
+        return mb_strimwidth($string, 0, $maxLength, $append);
+    }
+    
+    return substr($string, 0, $maxLength - strlen($append)) . $append;
+}

@@ -56,7 +56,7 @@ foreach ($events as $e) {
         'backgroundColor' => $color,
         'borderColor' => $color,
         'extendedProps' => [
-            'description' => mb_strimwidth($e['description'] ?? '', 0, 100, '...'),
+            'description' => shortenText($e['description'] ?? '', 100),
             'category' => ucfirst($e['category']),
             'department' => $e['department']
         ]
