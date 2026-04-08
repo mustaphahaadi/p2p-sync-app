@@ -171,7 +171,11 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                             </div>
                             
                             <!-- Title & Description -->
-                            <h6 class="fw-bold mb-2"><?= sanitize($event['title']) ?></h6>
+                            <h6 class="fw-bold mb-2">
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#eventModal<?= $event['id'] ?>" class="text-decoration-none text-dark">
+                                    <?= sanitize($event['title']) ?>
+                                </a>
+                            </h6>
                             <p class="text-muted mb-3" style="font-size:.85rem;flex-grow:1">
                                 <?= sanitize(shortenText($event['description'] ?? '', 120)) ?>
                             </p>
@@ -214,9 +218,13 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                                 </span>
                             </div>
                             
-                            <?php if (isAdmin()): ?>
                             <hr class="my-2">
-                            <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#eventModal<?= $event['id'] ?>">
+                                <i class="bi bi-info-circle me-1"></i> View Details
+                            </button>
+                            
+                            <?php if (isAdmin()): ?>
+                            <div class="d-flex gap-2 mt-2">
                                 <a href="<?= BASE_URL ?>events/edit.php?id=<?= $event['id'] ?>" 
                                    class="btn btn-sm btn-outline-primary-custom flex-grow-1">
                                     <i class="bi bi-pencil me-1"></i> Edit
@@ -230,6 +238,68 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                             <?php endif; ?>
                         </div>
                     </div>
+                    
+                    <!-- Event Details Modal -->
+                    <div class="modal fade" id="eventModal<?= $event['id'] ?>" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold"><?= sanitize($event['title']) ?></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3 d-flex gap-2 align-items-center">
+                                        <span class="badge <?= getCategoryBadge($event['category']) ?>">
+                                            <i class="bi <?= getCategoryIcon($event['category']) ?> me-1"></i>
+                                            <?= ucfirst($event['category']) ?>
+                                        </span>
+                                        <?php if (!empty($event['semester'])): ?>
+                                        <span class="badge bg-light text-dark border">
+                                            <?= sanitize($event['semester']) ?> <?= !empty($event['academic_year']) ? "(" . sanitize($event['academic_year']) . ")" : "" ?>
+                                        </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <i class="bi bi-calendar3 text-muted me-2"></i>
+                                        <strong>Date:</strong> 
+                                        <?php 
+                                            if (!empty($event['end_date']) && $event['end_date'] !== $event['event_date']) {
+                                                echo date('M d, Y', strtotime($event['event_date'])) . ' - ' . date('M d, Y', strtotime($event['end_date']));
+                                            } else {
+                                                echo date('l, M d, Y', strtotime($event['event_date']));
+                                            }
+                                        ?>
+                                    </div>
+                                    
+                                    <?php if ($event['event_time']): ?>
+                                    <div class="mb-2">
+                                        <i class="bi bi-clock text-muted me-2"></i>
+                                        <strong>Time:</strong> <?= date('g:i A', strtotime($event['event_time'])) ?>
+                                    </div>
+                                    <?php endif; ?>
+                                    
+                                    <div class="mb-2">
+                                        <i class="bi bi-building text-muted me-2"></i>
+                                        <strong>Department:</strong> <?= sanitize($event['department']) ?>
+                                    </div>
+                                    
+                                    <hr>
+                                    <h6 class="fw-bold mb-2">Description / Details</h6>
+                                    <p class="text-muted" style="white-space: pre-wrap; font-size: 0.95rem;"><?= !empty($event['description']) ? sanitize($event['description']) : '<em>No additional details provided.</em>' ?></p>
+                                </div>
+                                <div class="modal-footer">
+                                    <?php if (isAdmin()): ?>
+                                    <a href="<?= BASE_URL ?>events/edit.php?id=<?= $event['id'] ?>" class="btn btn-outline-primary-custom me-auto">
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
             <?php endforeach; ?>
         </div>
