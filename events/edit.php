@@ -4,6 +4,7 @@
  */
 $pageTitle = 'Edit Event';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/audit.php';
 requireAdmin();
 
 $pdo = getDBConnection();
@@ -36,29 +37,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description   = sanitize($_POST['description'] ?? '');
     $event_date    = $_POST['event_date'] ?? '';
     $end_date      = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-    $event_time    = $_POST['event_time'] ?? null;
+    $event_time    = !empty($_POST['event_time']) ? $_POST['event_time'] : null;
     $academic_year = sanitize($_POST['academic_year'] ?? '');
     $semester      = sanitize($_POST['semester'] ?? 'First Semester');
     $department    = sanitize($_POST['department'] ?? 'All');
     $category      = $_POST['category'] ?? 'other';
-    $reminder_days = (int) ($_POST['reminder_days'] ?? 3);
+    $reminder_time = (int) ($_POST['reminder_time'] ?? 1);
+    $reminder_unit = $_POST['reminder_unit'] ?? 'days';
     
-    $old = array_merge($event, compact('title', 'description', 'event_date', 'end_date', 'event_time', 'academic_year', 'semester', 'department', 'category', 'reminder_days'));
+    // Determine status from which button was clicked
+    $status = isset($_POST['save_draft']) ? 'draft' : 'published';
+    
+    $old = array_merge($event, compact('title', 'description', 'event_date', 'end_date', 'event_time', 'academic_year', 'semester', 'department', 'category', 'reminder_time', 'reminder_unit', 'status'));
     
     if (empty($title))      $errors[] = 'Event title is required.';
     if (empty($event_date)) $errors[] = 'Event date is required.';
-    if ($reminder_days < 0 || $reminder_days > 30) $errors[] = 'Reminder days must be between 0 and 30.';
+    if ($reminder_time < 0) $errors[] = 'Reminder time cannot be negative.';
+    if (!in_array($reminder_unit, ['minutes', 'hours', 'days'])) $errors[] = 'Invalid reminder unit.';
     
     if (empty($errors)) {
         $stmt = $pdo->prepare("
-            UPDATE events SET title=?, description=?, event_date=?, end_date=?, event_time=?, academic_year=?, semester=?, department=?, category=?, reminder_days=?
+            UPDATE events SET title=?, description=?, event_date=?, end_date=?, event_time=?, academic_year=?, semester=?, department=?, category=?, reminder_time=?, reminder_unit=?, status=?
             WHERE id=?
         ");
         $stmt->execute([
             $title, $description, $event_date, $end_date,
-            $event_time ?: null, $academic_year, $semester, $department, $category,
-            $reminder_days, $eventId
+            $event_time, $academic_year, $semester, $department, $category,
+            $reminder_time, $reminder_unit, $status, $eventId
         ]);
+        
+        // Audit log
+        logAuditAction($_SESSION['user_id'], 'updated', 'event', $eventId, "Updated event: $title (Status: $status)");
         
         setFlash('success', 'Event updated successfully!');
         redirect('events/index.php');
@@ -167,19 +176,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label for="reminder_days" class="form-label fw-semibold">Remind Before (days)</label>
-                                <input type="number" class="form-control" id="reminder_days" name="reminder_days" 
-                                       value="<?= $old['reminder_days'] ?>" min="0" max="30">
+                                <label class="form-label fw-semibold">Remind Before</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="reminder_time" 
+                                           value="<?= sanitize($old['reminder_time'] ?? 1) ?>" min="0">
+                                    <select class="form-select" name="reminder_unit" style="max-width: 120px;">
+                                        <option value="minutes" <?= ($old['reminder_unit'] ?? 'days') === 'minutes' ? 'selected' : '' ?>>Minutes</option>
+                                        <option value="hours" <?= ($old['reminder_unit'] ?? 'days') === 'hours' ? 'selected' : '' ?>>Hours</option>
+                                        <option value="days" <?= ($old['reminder_unit'] ?? 'days') === 'days' ? 'selected' : '' ?>>Days</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         
                         <hr class="my-4">
                         
                         <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-primary-solid px-4">
-                                <i class="bi bi-check-lg me-1"></i> Update Event
+                            <button type="submit" name="publish" value="1" class="btn btn-primary-solid px-4">
+                                <i class="bi bi-send me-1"></i> <?= ($old['status'] ?? 'published') === 'draft' ? 'Publish Event' : 'Update & Keep Published' ?>
                             </button>
-                            <a href="<?= BASE_URL ?>events/index.php" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" name="save_draft" value="1" class="btn btn-outline-secondary">
+                                <i class="bi bi-file-earmark-text me-1"></i> Save as Draft
+                            </button>
+                            <a href="<?= BASE_URL ?>events/index.php" class="btn btn-link text-muted ms-auto">Cancel</a>
                         </div>
                     </form>
                 </div>

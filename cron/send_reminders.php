@@ -4,12 +4,12 @@
  * 
  * This script should be run daily via cron.
  * 
- * Cron entry (runs every day at 7:00 AM):
- *   0 7 * * * /usr/bin/php /path/to/your/project/cron/send_reminders.php >> /path/to/your/project/cron/cron.log 2>&1
+ * Cron entry (ideal for minute-level granularity):
+ *   * * * * * /usr/bin/php /path/to/your/project/cron/send_reminders.php >> /path/to/your/project/cron/cron.log 2>&1
  * 
  * Logic:
- *   For each upcoming event, if today == event_date - reminder_days,
- *   send a reminder email to all matching users and create a notification record.
+ *   For each published upcoming event, calculate exact Trigger Date = event_date + event_time - reminder intervals.
+ *   If NOW() >= Trigger Date, send email & SMS placeholders. Only one reminder is sent per user per event.
  */
 
 // Prevent web access
@@ -20,17 +20,22 @@ if (php_sapi_name() !== 'cli' && !defined('CRON_ALLOWED')) {
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/mail.php';
+require_once __DIR__ . '/../config/sms.php';
 
 echo "[" . date('Y-m-d H:i:s') . "] Starting reminder check...\n";
 
 $pdo = getDBConnection();
 
-// Find events where today == event_date - reminder_days
-// i.e., event_date = CURDATE() + reminder_days
+// Find events where current time >= (event_date + event_time) - interval
 $stmt = $pdo->query("
     SELECT * FROM events 
-    WHERE event_date >= CURDATE()
-    AND DATEDIFF(event_date, CURDATE()) = reminder_days
+    WHERE status = 'published' 
+    AND event_date >= CURDATE()
+    AND (
+        (reminder_unit = 'days' AND DATE_SUB(CAST(CONCAT(event_date, ' ', IFNULL(event_time, '00:00:00')) AS DATETIME), INTERVAL reminder_time DAY) <= NOW()) OR
+        (reminder_unit = 'hours' AND DATE_SUB(CAST(CONCAT(event_date, ' ', IFNULL(event_time, '00:00:00')) AS DATETIME), INTERVAL reminder_time HOUR) <= NOW()) OR
+        (reminder_unit = 'minutes' AND DATE_SUB(CAST(CONCAT(event_date, ' ', IFNULL(event_time, '00:00:00')) AS DATETIME), INTERVAL reminder_time MINUTE) <= NOW())
+    )
 ");
 $events = $stmt->fetchAll();
 
@@ -50,9 +55,9 @@ foreach ($events as $event) {
     // Find target users
     // If department is 'All', notify everyone; otherwise, notify matching department users
     if ($event['department'] === 'All') {
-        $userStmt = $pdo->query("SELECT id, name, email FROM users");
+        $userStmt = $pdo->query("SELECT id, name, email, phone FROM users");
     } else {
-        $userStmt = $pdo->prepare("SELECT id, name, email FROM users WHERE department = ? OR role = 'admin'");
+        $userStmt = $pdo->prepare("SELECT id, name, email, phone FROM users WHERE department = ? OR role = 'admin'");
         $userStmt->execute([$event['department']]);
     }
     $users = $userStmt->fetchAll();
@@ -60,10 +65,10 @@ foreach ($events as $event) {
     echo "  Target users: " . count($users) . "\n";
     
     foreach ($users as $user) {
-        // Check if notification already sent (prevent duplicates)
+        // Check if notification already sent for THIS EVENT completely (not just today)
         $checkStmt = $pdo->prepare("
             SELECT id FROM notifications 
-            WHERE user_id = ? AND event_id = ? AND DATE(sent_at) = CURDATE()
+            WHERE user_id = ? AND event_id = ?
         ");
         $checkStmt->execute([$user['id'], $event['id']]);
         
@@ -73,8 +78,13 @@ foreach ($events as $event) {
         }
         
         // Build message
-        $daysLeft = $event['reminder_days'];
-        $message = "Reminder: \"{$event['title']}\" is coming up in {$daysLeft} day" . ($daysLeft > 1 ? 's' : '') . " on " . date('M d, Y', strtotime($event['event_date'])) . ".";
+        $unitStr = $event['reminder_unit'];
+        $timeVal = $event['reminder_time'];
+        if ($timeVal == 1 && substr($unitStr, -1) === 's') {
+            $unitStr = substr($unitStr, 0, -1);
+        }
+        
+        $message = "Reminder: \"{$event['title']}\" is coming up in {$timeVal} {$unitStr} on " . date('M d, Y', strtotime($event['event_date'])) . ".";
         
         // Create notification record
         $notifStmt = $pdo->prepare("
@@ -96,16 +106,31 @@ foreach ($events as $event) {
         
         $subject = "📅 Reminder: {$event['title']} — " . date('M d, Y', strtotime($event['event_date']));
         
-        $sent = sendEmail($user['email'], $subject, $emailBody);
+        $sentParams = 0;
         
-        if ($sent) {
+        // Send SMS if phone exists
+        if (!empty($user['phone'])) {
+            $smsSent = sendSMS($user['phone'], "CAMPUS ALERT: " . $message);
+            if ($smsSent) {
+                echo "  [OK] SMS sent to: {$user['phone']}\n";
+                $sentParams++;
+            }
+        }
+        
+        $sentEmail = sendEmail($user['email'], $subject, $emailBody);
+        
+        if ($sentEmail) {
             echo "  [OK] Email sent to: {$user['email']}\n";
+            $sentParams++;
+        }
+        
+        if ($sentParams > 0) {
             $totalSent++;
         } else {
-            echo "  [FAIL] Email failed for: {$user['email']}\n";
+            echo "  [FAIL] Failed to notify: {$user['email']}\n";
             $totalFailed++;
         }
     }
 }
 
-echo "\n[" . date('Y-m-d H:i:s') . "] Done! Sent: {$totalSent}, Failed: {$totalFailed}\n";
+echo "\n[" . date('Y-m-d H:i:s') . "] Done! Successfully Notified: {$totalSent}, Failed: {$totalFailed}\n";

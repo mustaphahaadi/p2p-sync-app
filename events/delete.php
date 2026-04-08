@@ -3,6 +3,7 @@
  * Delete Event (Admin only)
  */
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/audit.php';
 requireAdmin();
 
 $eventId = (int) ($_GET['id'] ?? 0);
@@ -31,6 +32,9 @@ $stmt->execute([$eventId]);
 // Delete event
 $stmt = $pdo->prepare("DELETE FROM events WHERE id = ?");
 $stmt->execute([$eventId]);
+
+// Audit log
+logAuditAction($_SESSION['user_id'], 'deleted', 'event', $eventId, "Deleted event: " . $event['title']);
 
 setFlash('success', 'Event "' . sanitize($event['title']) . '" has been deleted.');
 redirect('events/index.php');

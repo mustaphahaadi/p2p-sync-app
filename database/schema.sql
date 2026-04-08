@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     department VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) DEFAULT NULL,
     role ENUM('student', 'lecturer', 'admin') NOT NULL DEFAULT 'student',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -35,7 +36,9 @@ CREATE TABLE IF NOT EXISTS events (
     event_time TIME DEFAULT NULL,
     department VARCHAR(100) DEFAULT 'All',
     category ENUM('lecture', 'exam', 'registration', 'seminar', 'workshop', 'deadline', 'other') NOT NULL DEFAULT 'other',
-    reminder_days INT NOT NULL DEFAULT 1,
+    status ENUM('draft', 'published') NOT NULL DEFAULT 'published',
+    reminder_time INT NOT NULL DEFAULT 1,
+    reminder_unit ENUM('minutes', 'hours', 'days') NOT NULL DEFAULT 'days',
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -55,6 +58,20 @@ CREATE TABLE IF NOT EXISTS notifications (
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- -------------------------------------------
+-- Audit Logs Table
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INT,
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -------------------------------------------

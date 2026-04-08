@@ -34,20 +34,27 @@ if ($filterDepartment) {
     $params[] = $filterDepartment;
 }
 if ($filterSearch) {
-    $where[] = "(title LIKE ? OR description LIKE ?)";
+    $whereClauses[] = "(title LIKE ? OR description LIKE ?)";
     $params[] = "%$filterSearch%";
     $params[] = "%$filterSearch%";
 }
 
 // Non-admin users also see 'All' department events
-if (!isAdmin() && empty($filterDepartment)) {
-    $where[] = "(department = ? OR department = 'All')";
+if (!isAdmin() && $filterDepartment !== 'All') {
+    $whereClauses[] = "(department = ? OR department = 'All')";
     $params[] = $userDept;
 }
 
-$sql = "SELECT * FROM events";
-if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-$sql .= " ORDER BY event_date " . ($filterPeriod === 'past' ? 'DESC' : 'ASC');
+if (!isAdmin()) {
+    $whereClauses[] = "status = 'published'";
+}
+
+$whereSQL = '';
+if (!empty($whereClauses)) {
+    $whereSQL = " WHERE " . implode(' AND ', $whereClauses);
+}
+
+$sql = "SELECT * FROM events" . $whereSQL . " ORDER BY event_date " . ($filterPeriod === 'past' ? 'DESC' : 'ASC');
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -153,11 +160,16 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                     <div class="content-card h-100">
                         <div class="content-card-body d-flex flex-column">
                             <!-- Category & Date -->
-                            <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center mb-2 justify-content-between">
                                 <span class="badge <?= getCategoryBadge($event['category']) ?>">
                                     <i class="bi <?= getCategoryIcon($event['category']) ?> me-1"></i>
                                     <?= ucfirst($event['category']) ?>
                                 </span>
+                                <?php if (isAdmin() && ($event['status'] ?? 'published') === 'draft'): ?>
+                                <span class="badge bg-secondary"><i class="bi bi-file-earmark-text me-1"></i>Draft</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-start mb-3">
                                 <?php
                                 $daysLeft = (int) ((strtotime($event['event_date']) - strtotime('today')) / 86400);
                                 if ($daysLeft < 0) {
@@ -214,7 +226,12 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                             
                             <div class="d-flex gap-2 align-items-center" style="font-size:.78rem">
                                 <span class="text-muted">
-                                    <i class="bi bi-alarm me-1"></i> Reminder: <?= $event['reminder_days'] ?> day<?= $event['reminder_days'] > 1 ? 's' : '' ?> before
+                                    <?php
+                                        $uStr = $event['reminder_unit'] ?? 'days';
+                                        $vStr = $event['reminder_time'] ?? 1;
+                                        if ($vStr == 1 && substr($uStr, -1) === 's') $uStr = substr($uStr, 0, -1);
+                                    ?>
+                                    <i class="bi bi-alarm me-1"></i> Reminder: <?= $vStr . ' ' . $uStr ?> before
                                 </span>
                             </div>
                             
@@ -284,6 +301,9 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                                         <strong>Department:</strong> <?= sanitize($event['department']) ?>
                                     </div>
                                     
+                                    <div class="mb-3">
+                                        <strong><i class="bi bi-alarm text-muted me-2"></i>Reminder Settings:</strong> <?= $vStr . ' ' . $uStr ?> before
+                                    </div>
                                     <hr>
                                     <h6 class="fw-bold mb-2">Description / Details</h6>
                                     <p class="text-muted" style="white-space: pre-wrap; font-size: 0.95rem;"><?= !empty($event['description']) ? sanitize($event['description']) : '<em>No additional details provided.</em>' ?></p>

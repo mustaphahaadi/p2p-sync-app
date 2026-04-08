@@ -4,6 +4,7 @@
  */
 $pageTitle = 'Add Event';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/audit.php';
 requireAdmin();
 
 $errors = [];
@@ -11,7 +12,7 @@ $old = [
     'title' => '', 'description' => '', 'event_date' => '', 'end_date' => '',
     'event_time' => '', 'academic_year' => '', 'semester' => 'First Semester', 
     'department' => 'All', 'category' => 'other',
-    'reminder_days' => 3
+    'reminder_time' => 1, 'reminder_unit' => 'days'
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -23,19 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description   = sanitize($_POST['description'] ?? '');
     $event_date    = $_POST['event_date'] ?? '';
     $end_date      = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-    $event_time    = $_POST['event_time'] ?? null;
+    $event_time    = !empty($_POST['event_time']) ? $_POST['event_time'] : null;
     $academic_year = sanitize($_POST['academic_year'] ?? '');
     $semester      = sanitize($_POST['semester'] ?? 'First Semester');
     $department    = sanitize($_POST['department'] ?? 'All');
     $category      = $_POST['category'] ?? 'other';
-    $reminder_days = (int) ($_POST['reminder_days'] ?? 3);
+    $reminder_time = (int) ($_POST['reminder_time'] ?? 1);
+    $reminder_unit = $_POST['reminder_unit'] ?? 'days';
     
-    $old = compact('title', 'description', 'event_date', 'end_date', 'event_time', 'academic_year', 'semester', 'department', 'category', 'reminder_days');
+    // Determine status from which button was clicked
+    $status = isset($_POST['save_draft']) ? 'draft' : 'published';
+    
+    $old = compact('title', 'description', 'event_date', 'end_date', 'event_time', 'academic_year', 'semester', 'department', 'category', 'reminder_time', 'reminder_unit');
     
     // Validation
     if (empty($title))      $errors[] = 'Event title is required.';
     if (empty($event_date)) $errors[] = 'Event date is required.';
-    if ($reminder_days < 0 || $reminder_days > 30) $errors[] = 'Reminder days must be between 0 and 30.';
+    if ($reminder_time < 0) $errors[] = 'Reminder time cannot be negative.';
+    if (!in_array($reminder_unit, ['minutes', 'hours', 'days'])) $errors[] = 'Invalid reminder unit.';
     
     $validCategories = ['lecture','exam','registration','seminar','workshop','deadline','other'];
     if (!in_array($category, $validCategories)) $errors[] = 'Invalid category.';
@@ -43,16 +49,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         $pdo = getDBConnection();
         $stmt = $pdo->prepare("
-            INSERT INTO events (title, description, event_date, end_date, event_time, academic_year, semester, department, category, reminder_days, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO events (title, description, event_date, end_date, event_time, academic_year, semester, department, category, reminder_time, reminder_unit, status, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $title, $description, $event_date, $end_date,
-            $event_time ?: null, $academic_year, $semester, $department, $category,
-            $reminder_days, $_SESSION['user_id']
+            $event_time, $academic_year, $semester, $department, $category,
+            $reminder_time, $reminder_unit, $status, $_SESSION['user_id']
         ]);
         
-        setFlash('success', 'Event "' . $title . '" has been created successfully!');
+        $eventId = $pdo->lastInsertId();
+        
+        // Audit log
+        logAuditAction($_SESSION['user_id'], 'created', 'event', $eventId, "Created $status event: $title");
+        
+        $msg = $status === 'draft' ? "Draft event saved successfully!" : "Event published successfully!";
+        setFlash('success', $msg);
         redirect('events/index.php');
     }
 }
@@ -160,20 +172,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label for="reminder_days" class="form-label fw-semibold">Remind Before (days)</label>
-                                <input type="number" class="form-control" id="reminder_days" name="reminder_days" 
-                                       value="<?= $old['reminder_days'] ?>" min="0" max="30">
-                                <small class="text-muted">How many days before the event to send reminders</small>
+                                <label class="form-label fw-semibold">Remind Before</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="reminder_time" 
+                                           value="<?= $old['reminder_time'] ?>" min="0">
+                                    <select class="form-select" name="reminder_unit" style="max-width: 120px;">
+                                        <option value="minutes" <?= $old['reminder_unit'] === 'minutes' ? 'selected' : '' ?>>Minutes</option>
+                                        <option value="hours" <?= $old['reminder_unit'] === 'hours' ? 'selected' : '' ?>>Hours</option>
+                                        <option value="days" <?= $old['reminder_unit'] === 'days' ? 'selected' : '' ?>>Days</option>
+                                    </select>
+                                </div>
+                                <small class="text-muted">When to send notifications</small>
                             </div>
                         </div>
                         
                         <hr class="my-4">
                         
                         <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-primary-solid px-4">
-                                <i class="bi bi-check-lg me-1"></i> Create Event
+                            <button type="submit" name="publish" value="1" class="btn btn-primary-solid px-4">
+                                <i class="bi bi-send me-1"></i> Publish Event
                             </button>
-                            <a href="<?= BASE_URL ?>events/index.php" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" name="save_draft" value="1" class="btn btn-outline-secondary">
+                                <i class="bi bi-file-earmark-text me-1"></i> Save as Draft
+                            </button>
+                            <a href="<?= BASE_URL ?>events/index.php" class="btn btn-link text-muted ms-auto">Cancel</a>
                         </div>
                     </form>
                 </div>

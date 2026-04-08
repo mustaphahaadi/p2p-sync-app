@@ -17,9 +17,10 @@ $userDept = $_SESSION['user_dept'] ?? 'All';
 if (!isAdmin()) {
     $where[] = "(department = ? OR department = 'All')";
     $params[] = $userDept;
+    $where[] = "status = 'published'";
 }
 
-$sql = "SELECT id, title, description, event_date, end_date, category, department FROM events";
+$sql = "SELECT id, title, description, event_date, end_date, category, department, status FROM events";
 if ($where) {
     $sql .= " WHERE " . implode(" AND ", $where);
 }
@@ -33,13 +34,19 @@ $fcEvents = [];
 foreach ($events as $e) {
     // Determine colors based on category
     $color = '#4f46e5'; // default primary
-    switch ($e['category']) {
-        case 'lecture': $color = '#3b82f6'; break;
-        case 'exam': $color = '#ef4444'; break;
-        case 'registration': $color = '#10b981'; break;
-        case 'deadline': $color = '#f59e0b'; break;
-        case 'seminar': $color = '#8b5cf6'; break;
-        case 'workshop': $color = '#06b6d4'; break;
+    $isDraft = (isset($e['status']) && $e['status'] === 'draft');
+    
+    if ($isDraft) {
+        $color = '#6c757d'; // gray for drafts
+    } else {
+        switch ($e['category']) {
+            case 'lecture': $color = '#3b82f6'; break;
+            case 'exam': $color = '#ef4444'; break;
+            case 'registration': $color = '#10b981'; break;
+            case 'deadline': $color = '#f59e0b'; break;
+            case 'seminar': $color = '#8b5cf6'; break;
+            case 'workshop': $color = '#06b6d4'; break;
+        }
     }
 
     // FullCalendar end date is exclusive. So if an event is multi-day inclusive, we must add 1 day to end_date.
@@ -58,7 +65,9 @@ foreach ($events as $e) {
         'extendedProps' => [
             'description' => shortenText($e['description'] ?? '', 100),
             'category' => ucfirst($e['category']),
-            'department' => $e['department']
+            'department' => $e['department'],
+            'status' => ucfirst($e['status'] ?? 'Published'),
+            'isDraft' => $isDraft
         ]
     ];
 }
@@ -142,7 +151,8 @@ foreach ($events as $e) {
             eventClick: function(info) {
                 var props = info.event.extendedProps;
                 
-                document.getElementById('modalTitle').textContent = info.event.title;
+                var draftBadge = props.isDraft ? ' <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">Draft</span>' : '';
+                document.getElementById('modalTitle').innerHTML = info.event.title + draftBadge;
                 
                 var dateStr = info.event.start.toLocaleDateString();
                 if (info.event.end && info.event.end > info.event.start) {

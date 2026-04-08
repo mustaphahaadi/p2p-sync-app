@@ -26,13 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update_profile') {
         $name       = sanitize($_POST['name'] ?? '');
         $department = sanitize($_POST['department'] ?? '');
+        $phone      = sanitize($_POST['phone'] ?? '');
         
         if (empty($name)) $errors[] = 'Name is required.';
         if (empty($department)) $errors[] = 'Department is required.';
         
         if (empty($errors)) {
-            $stmt = $pdo->prepare("UPDATE users SET name = ?, department = ? WHERE id = ?");
-            $stmt->execute([$name, $department, $userId]);
+            $stmt = $pdo->prepare("UPDATE users SET name = ?, department = ?, phone = ? WHERE id = ?");
+            $stmt->execute([$name, $department, $phone, $userId]);
             
             $_SESSION['user_name'] = $name;
             $_SESSION['user_dept'] = $department;
@@ -128,6 +129,9 @@ $unreadNotifCount = $stmt->fetchColumn();
                     
                     <p class="text-muted mb-0" style="font-size:.8rem">
                         <i class="bi bi-building me-1"></i> <?= sanitize($user['department']) ?><br>
+                        <?php if(!empty($user['phone'])): ?>
+                        <i class="bi bi-telephone me-1"></i> <?= sanitize($user['phone']) ?><br>
+                        <?php endif; ?>
                         <i class="bi bi-calendar me-1"></i> Joined <?= date('M d, Y', strtotime($user['created_at'])) ?>
                     </p>
                 </div>
@@ -160,13 +164,20 @@ $unreadNotifCount = $stmt->fetchColumn();
                             </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="department" class="form-label fw-semibold">Department</label>
-                            <select class="form-select" id="department" name="department" required>
-                                <?php foreach (['Computer Science','Engineering','Business','Arts & Humanities','Sciences','Education','Health Sciences','Law'] as $dept): ?>
-                                    <option <?= $user['department'] === $dept ? 'selected' : '' ?>><?= $dept ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label fw-semibold">Department</label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <?php foreach (['Computer Science','Engineering','Business','Arts & Humanities','Sciences','Education','Health Sciences','Law'] as $dept): ?>
+                                        <option <?= $user['department'] === $dept ? 'selected' : '' ?>><?= $dept ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label fw-semibold">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="<?= sanitize($user['phone'] ?? '') ?>" placeholder="e.g. +1234567890">
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-primary-solid">

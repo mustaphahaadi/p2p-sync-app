@@ -14,10 +14,13 @@ $userDept = $_SESSION['user_dept'] ?? 'All';
 $stmt = $pdo->query("SELECT COUNT(*) FROM events");
 $totalEvents = $stmt->fetchColumn();
 
+$statusClause = isAdmin() ? "" : "AND status = 'published'";
+
 $stmt = $pdo->prepare("
     SELECT COUNT(*) FROM events 
     WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
     AND (department = ? OR department = 'All')
+    $statusClause
 ");
 $stmt->execute([$userDept]);
 $upcomingCount = $stmt->fetchColumn();
@@ -37,6 +40,7 @@ $stmt = $pdo->prepare("
     SELECT * FROM events 
     WHERE event_date >= CURDATE() AND event_date <= DATE_ADD(CURDATE(), INTERVAL 14 DAY)
     AND (department = ? OR department = 'All')
+    $statusClause
     ORDER BY event_date ASC 
     LIMIT 6
 ");
@@ -59,6 +63,7 @@ $recentNotifications = $stmt->fetchAll();
 $stmt = $pdo->prepare("
     SELECT * FROM events 
     WHERE event_date = CURDATE() AND (department = ? OR department = 'All')
+    $statusClause
     ORDER BY event_time ASC
 ");
 $stmt->execute([$userDept]);
@@ -182,7 +187,12 @@ $todayEvents = $stmt->fetchAll();
                                     </div>
                                     <div class="timeline-content flex-grow-1 pb-2">
                                         <div class="d-flex justify-content-between align-items-start">
-                                            <h6 class="mb-1 fw-bold"><?= sanitize($event['title']) ?></h6>
+                                            <h6 class="mb-1 fw-bold">
+                                                <?= sanitize($event['title']) ?>
+                                                <?php if (isAdmin() && ($event['status'] ?? 'published') === 'draft'): ?>
+                                                    <span class="badge bg-secondary ms-1" style="font-size: 0.6rem;">Draft</span>
+                                                <?php endif; ?>
+                                            </h6>
                                             <?php
                                             $daysLeft = (int) ((strtotime($event['event_date']) - strtotime('today')) / 86400);
                                             if ($daysLeft === 0) {
