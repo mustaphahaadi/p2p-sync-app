@@ -67,8 +67,20 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                 <p>Browse and manage campus academic calendar events</p>
             </div>
             <?php if (isAdmin()): ?>
-            <a href="<?= BASE_URL ?>events/create.php" class="btn btn-primary-solid">
-                <i class="bi bi-plus-lg me-1"></i> Add Event
+            <div class="d-flex gap-2">
+                <a href="<?= BASE_URL ?>events/calendar.php" class="btn btn-outline-primary-custom">
+                    <i class="bi bi-calendar3 me-1"></i> Calendar View
+                </a>
+                <a href="<?= BASE_URL ?>events/import.php" class="btn btn-outline-secondary">
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Import
+                </a>
+                <a href="<?= BASE_URL ?>events/create.php" class="btn btn-primary-solid">
+                    <i class="bi bi-plus-lg me-1"></i> Add Event
+                </a>
+            </div>
+            <?php else: ?>
+            <a href="<?= BASE_URL ?>events/calendar.php" class="btn btn-outline-primary-custom">
+                <i class="bi bi-calendar3 me-1"></i> Calendar View
             </a>
             <?php endif; ?>
         </div>
@@ -168,8 +180,22 @@ $departments = $deptStmt->fetchAll(PDO::FETCH_COLUMN);
                             <div class="d-flex flex-wrap gap-2 mb-3" style="font-size:.8rem">
                                 <span class="text-muted">
                                     <i class="bi bi-calendar3 me-1"></i>
-                                    <?= date('M d, Y', strtotime($event['event_date'])) ?>
+                                    <?php 
+                                        if (!empty($event['end_date']) && $event['end_date'] !== $event['event_date']) {
+                                            $sFmt = date('Y') == date('Y', strtotime($event['event_date'])) ? 'M d' : 'M d, Y';
+                                            echo date($sFmt, strtotime($event['event_date'])) . ' - ' . date('M d, Y', strtotime($event['end_date']));
+                                        } else {
+                                            echo date('M d, Y', strtotime($event['event_date']));
+                                        }
+                                    ?>
                                 </span>
+                                <?php if (!empty($event['semester'])): ?>
+                                <span class="text-muted">
+                                    <i class="bi bi-bookmark-fill me-1" style="color: var(--teal)"></i>
+                                    <?= sanitize($event['semester']) ?> 
+                                    <?= !empty($event['academic_year']) ? " (" . sanitize($event['academic_year']) . ")" : "" ?>
+                                </span>
+                                <?php endif; ?>
                                 <?php if ($event['event_time']): ?>
                                 <span class="text-muted">
                                     <i class="bi bi-clock me-1"></i>

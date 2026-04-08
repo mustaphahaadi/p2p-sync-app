@@ -88,6 +88,7 @@ foreach ($events as $event) {
             $user['name'],
             $event['title'],
             $event['event_date'],
+            $event['end_date'] ?? null,
             $event['event_time'],
             $event['description'] ?? '',
             $event['department']

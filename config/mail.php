@@ -32,8 +32,13 @@ function sendEmail($to, $subject, $htmlBody) {
 /**
  * Build a styled HTML email template
  */
-function buildReminderEmail($userName, $eventTitle, $eventDate, $eventTime, $eventDescription, $department) {
+function buildReminderEmail($userName, $eventTitle, $eventDate, $endDate, $eventTime, $eventDescription, $department) {
+    $sFmt = date('Y') == date('Y', strtotime($eventDate)) ? 'l, F j' : 'l, F j, Y';
     $formattedDate = date('l, F j, Y', strtotime($eventDate));
+    if (!empty($endDate) && $endDate !== $eventDate) {
+        $formattedDate = date($sFmt, strtotime($eventDate)) . ' to ' . date('l, F j, Y', strtotime($endDate));
+    }
+    
     $formattedTime = $eventTime ? date('g:i A', strtotime($eventTime)) : 'TBA';
     
     return '
@@ -50,7 +55,7 @@ function buildReminderEmail($userName, $eventTitle, $eventDate, $eventTime, $eve
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
                         <!-- Header -->
                         <tr>
-                            <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:32px 40px;text-align:center;">
+                            <td style="background:var(--primary);padding:32px 40px;text-align:center;">
                                 <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:600;">📅 Event Reminder</h1>
                                 <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Campus Academic Calendar</p>
                             </td>

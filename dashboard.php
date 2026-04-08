@@ -173,36 +173,50 @@ $todayEvents = $stmt->fetchAll();
                             <p>There are no events scheduled in the next 14 days.</p>
                         </div>
                     <?php else: ?>
-                        <div class="list-group list-group-flush">
+                        <div class="timeline-container p-3">
                             <?php foreach ($upcomingEvents as $event): ?>
-                                <div class="event-item">
-                                    <div class="event-date-badge">
-                                        <div class="month"><?= date('M', strtotime($event['event_date'])) ?></div>
-                                        <div class="day"><?= date('d', strtotime($event['event_date'])) ?></div>
+                                <div class="timeline-item d-flex pb-3 position-relative">
+                                    <div class="timeline-badge me-3 d-flex flex-column align-items-center">
+                                        <div class="timeline-dot rounded-circle bg-primary" style="width: 12px; height: 12px; margin-top: 5px;"></div>
+                                        <div class="timeline-line bg-secondary flex-grow-1 mt-1 opacity-25" style="width: 2px;"></div>
                                     </div>
-                                    <div class="event-info flex-grow-1">
-                                        <h6><?= sanitize($event['title']) ?></h6>
-                                        <p>
+                                    <div class="timeline-content flex-grow-1 pb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-1 fw-bold"><?= sanitize($event['title']) ?></h6>
+                                            <?php
+                                            $daysLeft = (int) ((strtotime($event['event_date']) - strtotime('today')) / 86400);
+                                            if ($daysLeft === 0) {
+                                                echo '<span class="badge bg-danger shadow-sm">Today</span>';
+                                            } elseif ($daysLeft === 1) {
+                                                echo '<span class="badge bg-warning text-dark shadow-sm">Tomorrow</span>';
+                                            } else {
+                                                echo '<span class="badge bg-light text-dark border shadow-sm">' . $daysLeft . ' days</span>';
+                                            }
+                                            ?>
+                                        </div>
+                                        <div class="text-muted small mb-2">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            <?php 
+                                                if (!empty($event['end_date']) && $event['end_date'] !== $event['event_date']) {
+                                                    $sFmt = date('Y') == date('Y', strtotime($event['event_date'])) ? 'M d' : 'M d, Y';
+                                                    echo date($sFmt, strtotime($event['event_date'])) . ' - ' . date('M d, Y', strtotime($event['end_date']));
+                                                } else {
+                                                    echo date('M d, Y', strtotime($event['event_date']));
+                                                }
+                                            ?>
+                                            <?php if (!empty($event['semester'])): ?>
+                                                &bull; <?= sanitize($event['semester']) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div>
                                             <span class="badge <?= getCategoryBadge($event['category']) ?> me-1">
                                                 <i class="bi <?= getCategoryIcon($event['category']) ?> me-1"></i>
                                                 <?= ucfirst($event['category']) ?>
                                             </span>
-                                            <span class="text-muted">
+                                            <span class="text-muted small">
                                                 <i class="bi bi-building me-1"></i><?= sanitize($event['department']) ?>
                                             </span>
-                                        </p>
-                                    </div>
-                                    <div class="text-end">
-                                        <?php
-                                        $daysLeft = (int) ((strtotime($event['event_date']) - strtotime('today')) / 86400);
-                                        if ($daysLeft === 0) {
-                                            echo '<span class="badge bg-danger">Today</span>';
-                                        } elseif ($daysLeft === 1) {
-                                            echo '<span class="badge bg-warning text-dark">Tomorrow</span>';
-                                        } else {
-                                            echo '<span class="badge bg-light text-dark">' . $daysLeft . ' days</span>';
-                                        }
-                                        ?>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>

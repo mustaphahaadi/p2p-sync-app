@@ -851,3 +851,14 @@ a:hover {
         font-size: 1.25rem;
     }
 }
+
+/* ==============================================
+   TIMELINE (Dashboard)
+   ============================================== */
+.timeline-item:last-child .timeline-line {
+    display: none;
+}
+.timeline-dot {
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}

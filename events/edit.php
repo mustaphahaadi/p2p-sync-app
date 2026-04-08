@@ -35,12 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title         = sanitize($_POST['title'] ?? '');
     $description   = sanitize($_POST['description'] ?? '');
     $event_date    = $_POST['event_date'] ?? '';
+    $end_date      = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $event_time    = $_POST['event_time'] ?? null;
+    $academic_year = sanitize($_POST['academic_year'] ?? '');
+    $semester      = sanitize($_POST['semester'] ?? 'First Semester');
     $department    = sanitize($_POST['department'] ?? 'All');
     $category      = $_POST['category'] ?? 'other';
     $reminder_days = (int) ($_POST['reminder_days'] ?? 3);
     
-    $old = array_merge($event, compact('title', 'description', 'event_date', 'event_time', 'department', 'category', 'reminder_days'));
+    $old = array_merge($event, compact('title', 'description', 'event_date', 'end_date', 'event_time', 'academic_year', 'semester', 'department', 'category', 'reminder_days'));
     
     if (empty($title))      $errors[] = 'Event title is required.';
     if (empty($event_date)) $errors[] = 'Event date is required.';
@@ -48,12 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($errors)) {
         $stmt = $pdo->prepare("
-            UPDATE events SET title=?, description=?, event_date=?, event_time=?, department=?, category=?, reminder_days=?
+            UPDATE events SET title=?, description=?, event_date=?, end_date=?, event_time=?, academic_year=?, semester=?, department=?, category=?, reminder_days=?
             WHERE id=?
         ");
         $stmt->execute([
-            $title, $description, $event_date,
-            $event_time ?: null, $department, $category,
+            $title, $description, $event_date, $end_date,
+            $event_time ?: null, $academic_year, $semester, $department, $category,
             $reminder_days, $eventId
         ]);
         
@@ -106,11 +109,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label for="event_date" class="form-label fw-semibold">Event Date <span class="text-danger">*</span></label>
+                                <label for="academic_year" class="form-label fw-semibold">Academic Year</label>
+                                <input type="text" class="form-control" id="academic_year" name="academic_year" 
+                                       value="<?= sanitize($old['academic_year']) ?>" placeholder="e.g. 2025/2026">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="semester" class="form-label fw-semibold">Semester</label>
+                                <select class="form-select" id="semester" name="semester">
+                                    <option <?= $old['semester'] === 'First Semester' ? 'selected' : '' ?>>First Semester</option>
+                                    <option <?= $old['semester'] === 'Second Semester' ? 'selected' : '' ?>>Second Semester</option>
+                                    <option <?= $old['semester'] === 'Vacation' ? 'selected' : '' ?>>Vacation</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="event_date" class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="event_date" name="event_date" 
                                        value="<?= $old['event_date'] ?>" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="end_date" class="form-label fw-semibold">End Date <small class="text-muted">(Optional)</small></label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="<?= $old['end_date'] ?>">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="event_time" class="form-label fw-semibold">Event Time</label>
                                 <input type="time" class="form-control" id="event_time" name="event_time" 
                                        value="<?= $old['event_time'] ?>">
